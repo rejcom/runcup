@@ -226,6 +226,10 @@ footer{max-width:980px;margin:0 auto;padding:0 12px 30px;font-size:12px;color:#7
         <input type="text" id="setPlace" value="">
         <label for="setDate">Datum</label>
         <input type="date" id="setDate">
+        <label for="setOrg">Pořadatel — jméno a příjmení</label>
+        <input type="text" id="setOrg" placeholder="Karel Rejthar">
+        <label for="setOrgCo">Pořadatel — firma / organizace</label>
+        <input type="text" id="setOrgCo" placeholder="EduCentre CZ s.r.o.">
       </div>
       <div>
         <label for="setDist">Trať (text na diplomu)</label>
@@ -685,6 +689,12 @@ async function drawDiploma(r){
   // místo + datum
   x.fillStyle="#3c465a";x.font="600 28px Inter";
   x.fillText([S.ev.place,czDate()].filter(Boolean).join(" · "),800,930);
+  // pořadatel
+  const org=[S.ev.org,S.ev.orgCo].filter(Boolean).join(" · ");
+  if(org){
+    x.fillStyle="#5a6575";x.font="600 24px Inter";
+    x.fillText("Pořadatel: "+org,800,968);
+  }
   // patička
   x.fillStyle=C3;
   x.beginPath();x.moveTo(0,1010);x.lineTo(1600,985);x.lineTo(1600,1131);x.lineTo(0,1131);x.closePath();x.fill();
@@ -796,6 +806,7 @@ async function sendOne(r){
     const png=(await drawDiploma(r)).toDataURL("image/png").split(",")[1];
     const res=await fetch(S.ev.hook,{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({key:S.ev.key||"",event:S.ev.name,date:czDate(),place:S.ev.place,
+        organizer:[S.ev.org,S.ev.orgCo].filter(Boolean).join(" · "),
         name:r.name,email:r.email,number:r.num,year:r.year,
         gender:r.gender==="M"?"muž":r.gender==="Z"?"žena":"",
         category:r.cat||"",category_position:r.catPos||"",
@@ -818,6 +829,7 @@ $("#btnSendAll").addEventListener("click",async()=>{
 function fillSettings(){
   $("#setName").value=S.ev.name;$("#setPlace").value=S.ev.place;
   $("#setDate").value=S.ev.date;$("#setDist").value=S.ev.dist;$("#setHook").value=S.ev.hook;
+  $("#setOrg").value=S.ev.org||"";$("#setOrgCo").value=S.ev.orgCo||"";
   $("#setKey").value=S.ev.key||"";
   $("#setMotto").value=S.d.motto;$("#setSub").value=S.d.sub;$("#setFoot").value=S.d.foot;
   $("#setC1").value=S.d.c1;$("#setC2").value=S.d.c2;$("#setC3").value=S.d.c3;
@@ -830,6 +842,7 @@ function fillSettings(){
 function readSettings(){
   S.ev={name:$("#setName").value.trim()||"RUN CUP",place:$("#setPlace").value.trim(),
         date:$("#setDate").value,dist:$("#setDist").value.trim(),hook:$("#setHook").value.trim(),
+        org:$("#setOrg").value.trim(),orgCo:$("#setOrgCo").value.trim(),
         key:$("#setKey").value.trim()};
   S.d.motto=$("#setMotto").value.trim();
   S.d.sub=$("#setSub").value.trim();
