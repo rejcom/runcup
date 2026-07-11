@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RunCup — univerzální časomíra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#122F5C; --navy-d:#0B1F3F; --orange:#F58220; --lime:#C3D530;
+  --paper:#F7F5F0; --ink:#1B2430; --white:#fff;
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;color:var(--ink);
+  background:var(--paper);
+  background-image:radial-gradient(circle at 85% -10%, #dfe8f2 0, transparent 45%);
+  min-height:100%;
+}
+.display{font-family:'Anton',Impact,sans-serif;letter-spacing:.02em;text-transform:uppercase}
+
+/* ---------- header ---------- */
+header{
+  background:var(--navy-d);
+  color:var(--white);
+  padding:18px 16px 26px;
+  position:relative;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),96% 100%,60% calc(100% - 6px),30% 100%,8% calc(100% - 8px),0 100%);
+}
+header h1{font-size:clamp(26px,6vw,40px);line-height:1}
+header h1 .dot{color:var(--orange)}
+header .sub{
+  display:inline-block;margin-top:8px;background:var(--orange);color:var(--white);
+  font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  padding:4px 12px;transform:skewX(-8deg);max-width:100%
+}
+header .sub span{display:inline-block;transform:skewX(8deg)}
+
+/* ---------- tabs ---------- */
+nav{
+  display:flex;gap:6px;padding:12px 12px 0;flex-wrap:wrap;
+  max-width:980px;margin:0 auto;
+}
+nav button{
+  font-family:'Anton',Impact,sans-serif;letter-spacing:.04em;text-transform:uppercase;
+  font-size:14px;border:2px solid var(--navy);background:var(--white);color:var(--navy);
+  padding:9px 14px;border-radius:10px 10px 0 0;cursor:pointer;
+}
+nav button[aria-selected="true"]{background:var(--navy);color:var(--white)}
+nav button:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+main{max-width:980px;margin:0 auto;padding:16px 12px 60px}
+section[hidden]{display:none}
+.card{background:var(--white);border:2px solid var(--navy);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.card h2{font-size:20px;margin-bottom:10px}
+.hint{font-size:13px;color:#5a6575;margin-bottom:10px}
+textarea,input[type=text],input[type=url],input[type=email],input[type=date],input[type=number]{
+  width:100%;border:2px solid #C7CEDA;border-radius:10px;padding:10px;font:inherit;font-size:15px;background:#FBFBF9
+}
+input[type=color]{width:60px;height:38px;border:2px solid #C7CEDA;border-radius:8px;background:#FBFBF9;padding:2px;cursor:pointer}
+textarea:focus,input:focus{outline:none;border-color:var(--orange)}
+label{font-weight:600;font-size:13px;display:block;margin:10px 0 4px}
+.btn{
+  font-family:'Anton',Impact,sans-serif;text-transform:uppercase;letter-spacing:.05em;
+  border:none;border-radius:12px;padding:12px 20px;font-size:16px;cursor:pointer;color:var(--white);
+  background:var(--navy);
+}
+.btn.orange{background:var(--orange)}
+.btn.red{background:#B3372E}
+.btn.ghost{background:var(--white);color:var(--navy);border:2px solid var(--navy)}
+.btn.small{padding:7px 12px;font-size:13px;border-radius:9px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible{outline:3px solid var(--lime);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 6px;border-bottom:1px solid #E4E7EE;text-align:left}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#5a6575}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px}
+.pill.ok{background:#E2F0D3;color:#3B6E1F}
+.pill.err{background:#F8DEDE;color:#A03030}
+.pill.wait{background:#EEE;color:#666}
+
+/* ---------- race clock ---------- */
+.clockpanel{
+  background:var(--navy);color:var(--white);border-radius:18px;
+  padding:22px 16px;text-align:center;position:relative;overflow:hidden;margin-bottom:16px;
+}
+.clockpanel::after{
+  content:"";position:absolute;right:-30px;top:-30px;width:140px;height:140px;
+  background:var(--orange);transform:rotate(18deg);opacity:.16;border-radius:20px;
+}
+.clockpanel.stopped{background:#37415a}
+#clock{
+  font-family:'Anton',Impact,sans-serif;font-size:clamp(52px,14vw,104px);
+  line-height:1;font-variant-numeric:tabular-nums;letter-spacing:.03em;
+}
+.clocksub{font-size:13px;opacity:.75;margin-top:6px;text-transform:uppercase;letter-spacing:.12em}
+.startzone{margin-top:14px}
+#tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.tile{
+  font-family:'Anton',Impact,sans-serif;font-size:24px;padding:14px 4px;border-radius:12px;
+  border:2px solid var(--navy);background:var(--white);color:var(--navy);cursor:pointer;
+}
+.tile small{display:block;font-family:'Inter';font-size:10px;font-weight:600;letter-spacing:0;text-transform:none;color:#5a6575;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.done{background:var(--lime);border-color:#8fa11c;color:var(--navy-d);cursor:default}
+.tile.done small{color:#41520a}
+.tile:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+#diplomaPreview{width:100%;max-width:640px;border:2px solid var(--navy);border-radius:10px;display:block;margin:10px auto}
+.medal{font-size:18px}
+.logothumb{max-height:56px;max-width:180px;border:1px solid #ddd;border-radius:8px;background:#fff;padding:4px;display:none}
+/* ---------- vlastní dialogy a toasty ---------- */
+.overlay{position:fixed;inset:0;background:rgba(11,31,63,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{background:#fff;border-radius:14px;border:2px solid var(--navy);max-width:440px;width:100%;padding:18px;font-size:15px;line-height:1.45}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--navy-d);color:#fff;padding:10px 18px;border-radius:99px;font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.errt{background:#B3372E}
+footer{max-width:980px;margin:0 auto;padding:0 12px 30px;font-size:12px;color:#7a8494;text-align:center}
+@media (prefers-reduced-motion:no-preference){
+  .tile{transition:transform .08s ease}
+  .tile:active{transform:scale(.94)}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1 class="display">RunCup<span class="dot">.</span></h1>
+  <div class="sub"><span id="hdrEvent">Univerzální časomíra pro komunitní závody</span></div>
+</header>
+
+<nav role="tablist" aria-label="Sekce aplikace">
+  <button role="tab" aria-selected="true" data-t="startovka">Startovka</button>
+  <button role="tab" aria-selected="false" data-t="zavod">Závod</button>
+  <button role="tab" aria-selected="false" data-t="vysledky">Výsledky</button>
+  <button role="tab" aria-selected="false" data-t="diplomy">Diplomy</button>
+  <button role="tab" aria-selected="false" data-t="nastaveni">Nastavení</button>
+</nav>
+
+<main>
+<!-- ================= STARTOVKA ================= -->
+<section id="startovka">
+  <div class="card">
+    <h2 class="display">Import startovní listiny</h2>
+    <p class="hint">Vlož řádky ve formátu <b>číslo;jméno;pohlaví;rok narození;e-mail</b> — pohlaví (M/Ž), rok i e-mail jsou nepovinné a mohou být v libovolném pořadí. Např. <code>1;Jana Nováková;Ž;1988;jana@skola.cz</code></p>
+    <textarea id="importBox" rows="5" placeholder="1;Jana Nováková;Ž;1988;jana@skola.cz&#10;2;Petr Svoboda;M;1979;petr@skola.cz&#10;3;Eva Malá;Ž"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="btnImport">Načíst seznam</button>
+      <label class="btn ghost" for="csvFile" style="display:inline-block">📄 Nahrát CSV soubor</label>
+      <input type="file" id="csvFile" accept=".csv,.tsv,.txt" hidden>
+      <button class="btn ghost" id="btnAddOne">+ Přidat jednoho</button>
+    </div>
+    <div id="addOneForm" class="row" hidden style="margin-top:10px;align-items:flex-end">
+      <div style="width:90px"><label for="aNum">Číslo</label><input type="number" id="aNum" min="1"></div>
+      <div style="flex:1;min-width:170px"><label for="aName">Jméno a příjmení</label><input type="text" id="aName"></div>
+      <div style="width:110px"><label for="aYear">Ročník</label><input type="number" id="aYear" placeholder="1990"></div>
+      <div style="width:110px"><label for="aSex">Pohlaví</label><select id="aSex" style="width:100%;border:2px solid #C7CEDA;border-radius:10px;padding:10px;font:inherit;background:#FBFBF9"><option value="">—</option><option value="M">Muž</option><option value="Z">Žena</option></select></div>
+      <div style="flex:1;min-width:170px"><label for="aMail">E-mail (nepovinné)</label><input type="email" id="aMail"></div>
+      <button class="btn small" id="aOk" style="margin-bottom:2px">Přidat</button>
+    </div>
+    <p class="hint" style="margin-top:8px">CSV může být export z Excelu, Google Sheets nebo Forms — oddělovač středník, čárka i tabulátor. Řádek s hlavičkou (např. <code>číslo;jméno;…</code>) se přeskočí automaticky.</p>
+  </div>
+  <div class="card">
+    <h2 class="display">Startující (<span id="cntP">0</span>)</h2>
+    <table id="tblP"><thead><tr><th class="num">Č.</th><th>Jméno</th><th>Pohlaví</th><th class="num">Ročník</th><th>E-mail</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ================= ZÁVOD ================= -->
+<section id="zavod" hidden>
+  <div class="clockpanel" id="clockpanel">
+    <div id="clock">00:00.0</div>
+    <div class="clocksub" id="clockstate">Připraveno ke startu</div>
+    <div class="startzone row" style="justify-content:center">
+      <button class="btn orange" id="btnStart">▶ Hromadný start</button>
+      <button class="btn red" id="btnStop" disabled>■ Ukončit závod</button>
+      <button class="btn ghost" id="btnUndo" style="background:transparent;color:#fff;border-color:#fff" disabled>↩ Vrátit poslední doběh</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2 class="display">Cíl — ťukni na číslo doběhajícího</h2>
+    <p class="hint">Kachle jsou seřazené podle startovních čísel. Po ťuknutí se uloží čas a kachle zezelená. Po ukončení závodu už doběhy zapisovat nejdou.</p>
+    <div id="tiles"></div>
+  </div>
+</section>
+
+<!-- ================= VÝSLEDKY ================= -->
+<section id="vysledky" hidden>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 class="display">Výsledková listina</h2>
+      <button class="btn small ghost" id="btnCsv">⬇ Export CSV</button>
+    </div>
+    <table id="tblR"><thead><tr><th class="num">Pořadí</th><th class="num">Č.</th><th>Jméno</th><th class="num">Ročník</th><th>Kategorie</th><th class="num">Čas</th></tr></thead><tbody></tbody></table>
+  </div>
+  <div id="catTables"></div>
+</section>
+
+<!-- ================= DIPLOMY ================= -->
+<section id="diplomy" hidden>
+  <div class="card">
+    <h2 class="display">Diplomy</h2>
+    <p class="hint">Diplom se generuje automaticky z výsledků a nastavení vzhledu. Stáhni PNG, nebo vše odešli na webhook (např. Relay.app → Gmail).</p>
+    <div class="row">
+      <button class="btn" id="btnAllPng">⬇ Stáhnout všechny PNG</button>
+      <button class="btn orange" id="btnSendAll">✉ Odeslat všem e-mailem</button>
+    </div>
+    <table id="tblD" style="margin-top:12px"><thead><tr><th class="num">Poř.</th><th>Jméno</th><th>E-mail</th><th>Akce</th><th>Stav</th></tr></thead><tbody></tbody></table>
+    <canvas id="diplomaPreview" width="1600" height="1131" aria-label="Náhled diplomu"></canvas>
+  </div>
+</section>
+
+<!-- ================= NASTAVENÍ ================= -->
+<section id="nastaveni" hidden>
+  <div class="card">
+    <h2 class="display">Akce</h2>
+    <div class="grid2">
+      <div>
+        <label for="setName">Název akce</label>
+        <input type="text" id="setName" value="RUN CUP 2026">
+        <label for="setPlace">Místo</label>
+        <input type="text" id="setPlace" value="">
+        <label for="setDate">Datum</label>
+        <input type="date" id="setDate">
+      </div>
+      <div>
+        <label for="setDist">Trať (text na diplomu)</label>
+        <input type="text" id="setDist" value="1 okruh · 3 232 m">
+        <label for="setHook">Webhook / endpoint URL pro odeslání diplomů</label>
+        <input type="url" id="setHook" placeholder="https://tvujweb.cz/send-diplom.php nebo Relay webhook">
+        <label for="setKey">API klíč (jen pro vlastní PHP endpoint)</label>
+        <input type="text" id="setKey" placeholder="stejný řetězec jako SECRET v send-diplom.php">
+        <label style="margin-top:14px"><input type="checkbox" id="setAgeCats" style="width:auto;margin-right:6px">Věkové kategorie (do 20 / 30 / 40 / 50 / 60 / nad 60 let)</label>
+        <p class="hint" style="margin-top:4px">Podle pohlaví se výsledky dělí vždy. Věk se počítá z ročníku k roku konání závodu.</p>
+        <p class="hint" style="margin-top:6px">Odesílá se JSON: <code>{name, email, number, year, gender, category, category_position, position, time, event, diploma_png_base64}</code></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="display">Vzhled diplomu</h2>
+    <div class="grid2">
+      <div>
+        <label for="setMotto">Motto / podtitulek (nahoře)</label>
+        <input type="text" id="setMotto" value="BĚŽ. UČ SE. ZAŽÍVEJ.">
+        <label for="setSub">Řádek pod názvem akce</label>
+        <input type="text" id="setSub" value="ANEB ROZBĚHEJ SE!">
+        <label for="setFoot">Text v patičce</label>
+        <input type="text" id="setFoot" value="Pohyb. Komunita. Radost z běhu.">
+        <label><input type="checkbox" id="setYearOn" checked style="width:auto;margin-right:6px">Zobrazit ročník na diplomu</label>
+      </div>
+      <div>
+        <label>Hlavní barva / akcentní barva / patička</label>
+        <div class="row">
+          <input type="color" id="setC1" value="#122F5C" title="Hlavní barva">
+          <input type="color" id="setC2" value="#F58220" title="Akcentní barva">
+          <input type="color" id="setC3" value="#C3D530" title="Barva patičky">
+        </div>
+        <label for="setLogo">Logo (PNG/JPG, max 500 kB — vpravo dole na diplomu)</label>
+        <input type="file" id="setLogo" accept="image/png,image/jpeg" style="font-size:13px">
+        <div class="row" style="margin-top:8px">
+          <img id="logoThumb" class="logothumb" alt="Náhled loga">
+          <button class="btn small ghost" id="btnLogoDel" hidden>✕ Odebrat logo</button>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="btnSaveSet">Uložit nastavení</button>
+      <button class="btn ghost" id="btnPreviewD">Náhled diplomu</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="display">Záloha závodu</h2>
+    <p class="hint">Export uloží celý závod (startovku, časy, výsledky i nastavení) do souboru JSON. Importem ho obnovíš na jiném zařízení nebo po smazání dat — hodí se jako pojistka, kdyby na akci selhal mobil.</p>
+    <div class="row">
+      <button class="btn" id="btnExportRace">⬇ Exportovat závod (JSON)</button>
+      <label class="btn ghost" for="importRaceFile" style="display:inline-block">⬆ Importovat závod</label>
+      <input type="file" id="importRaceFile" accept=".json,application/json" hidden>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="display">Nebezpečná zóna</h2>
+    <div class="row">
+      <button class="btn ghost" id="btnResetRace">Vynulovat závod (časy)</button>
+      <button class="btn ghost" id="btnResetAll" style="border-color:#A03030;color:#A03030">Smazat úplně vše</button>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>RunCup · univerzální časomíra pro komunitní běhy · vznikla vibecodingem</footer>
+
+<script>
+"use strict";
+/* ---------------- state ---------------- */
+let S = {
+  ev:{name:"RUN CUP 2026",place:"",date:"",dist:"1 okruh · 3 232 m",hook:""},
+  d:{motto:"BĚŽ. UČ SE. ZAŽÍVEJ.",sub:"ANEB ROZBĚHEJ SE!",foot:"Pohyb. Komunita. Radost z běhu.",
+     c1:"#122F5C",c2:"#F58220",c3:"#C3D530",showYear:true,ageCats:false,logo:""},
+  p:[],            // {num,name,year,email}
+  startTs:null,    // ms epoch
+  endTs:null,      // ms epoch (stop závodu)
+  running:false,
+  fin:[]           // {num,ms}  ms = elapsed
+};
+const KEY="runcup-v1";
+
+/* Ukládání: v náhledu Claude window.storage, na běžném hostingu localStorage */
+async function save(){
+  const j=JSON.stringify(S);
+  try{ if(window.storage&&window.storage.set){await window.storage.set(KEY,j);return;} }catch(e){}
+  try{ localStorage.setItem(KEY,j); }catch(e){ /* soukromý režim bez úložiště — data zůstanou jen v paměti */ }
+}
+async function load(){
+  let v=null;
+  try{ if(window.storage&&window.storage.get){const r=await window.storage.get(KEY); v=r&&r.value;} }catch(e){}
+  if(!v){ try{ v=localStorage.getItem(KEY); }catch(e){} }
+  if(!v) return;
+  try{
+    const d=JSON.parse(v);
+    S.ev=Object.assign(S.ev,d.ev||{});
+    S.d=Object.assign(S.d,d.d||{});
+    S.p=d.p||[]; S.fin=d.fin||[];
+    S.startTs=d.startTs||null; S.endTs=d.endTs||null; S.running=!!d.running;
+  }catch(e){ /* poškozená data — start načisto */ }
+}
+
+/* ---------------- helpers ---------------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function fmt(ms,tenths=false){
+  const t=Math.floor(ms/100), s=Math.floor(ms/1000);
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  const base=(h?h+":":"")+String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0");
+  return tenths? base+"."+(t%10) : base;
+}
+function eventYear(){
+  return S.ev.date? new Date(S.ev.date+"T12:00:00").getFullYear() : new Date().getFullYear();
+}
+const genderLabel=g=>g==="M"?"Muži":g==="Z"?"Ženy":"";
+function catLabel(x){
+  const g=genderLabel(x.gender);
+  if(!g) return "";
+  if(!S.d.ageCats) return g;
+  if(!x.year) return g+" · bez ročníku";
+  const age=eventYear()-parseInt(x.year,10);
+  const band=age<20?"do 20 let":age<30?"do 30 let":age<40?"do 40 let":age<50?"do 50 let":age<60?"do 60 let":"nad 60 let";
+  return g+" "+band;
+}
+function results(){
+  const R=S.fin.slice().sort((a,b)=>a.ms-b.ms).map((f,i)=>{
+    const p=S.p.find(x=>x.num===f.num)||{name:"?",email:"",year:"",gender:""};
+    return {pos:i+1,num:f.num,name:p.name,year:p.year||"",gender:p.gender||"",email:p.email,ms:f.ms};
+  });
+  const cnt={};
+  for(const r of R){
+    r.cat=catLabel(r);
+    if(r.cat){cnt[r.cat]=(cnt[r.cat]||0)+1;r.catPos=cnt[r.cat];}
+    else r.catPos=0;
+  }
+  return R;
+}
+function czDate(){
+  const d=S.ev.date? new Date(S.ev.date+"T12:00:00") : new Date();
+  return d.toLocaleDateString("cs-CZ",{day:"numeric",month:"long",year:"numeric"});
+}
+function updateHeader(){
+  $("#hdrEvent").textContent=(S.ev.name||"RunCup")+(S.ev.dist?" · "+S.ev.dist:"");
+}
+
+/* ---------- vlastní dialogy (systémové alert/confirm/prompt bývají v náhledech blokované) ---------- */
+function toast(msg,ok=true){
+  let t=document.getElementById("toast");
+  if(!t){t=document.createElement("div");t.id="toast";document.body.appendChild(t);}
+  t.textContent=msg;
+  t.className=ok?"":"errt";
+  requestAnimationFrame(()=>t.classList.add("show"));
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),3200);
+}
+function ask(msg,yes="Ano",no="Zrušit"){
+  return new Promise(res=>{
+    const ov=document.createElement("div");ov.className="overlay";
+    ov.innerHTML=`<div class="modal" role="dialog" aria-modal="true"><p>${esc(msg)}</p>
+      <div class="row" style="justify-content:flex-end;margin-top:14px">
+      <button class="btn ghost" data-a="0">${esc(no)}</button>
+      <button class="btn orange" data-a="1">${esc(yes)}</button></div></div>`;
+    document.body.appendChild(ov);
+    const done=v=>{res(v);ov.remove();};
+    ov.querySelectorAll("[data-a]").forEach(b=>b.addEventListener("click",()=>done(b.dataset.a==="1")));
+    ov.addEventListener("click",e=>{if(e.target===ov)done(false);});
+    ov.querySelector('[data-a="1"]').focus();
+  });
+}
+
+/* ---------------- tabs ---------------- */
+document.querySelectorAll("nav [role=tab]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("nav [role=tab]").forEach(x=>x.setAttribute("aria-selected","false"));
+    b.setAttribute("aria-selected","true");
+    document.querySelectorAll("main section").forEach(s=>s.hidden=true);
+    $("#"+b.dataset.t).hidden=false;
+    if(b.dataset.t==="zavod") renderRace();
+    if(b.dataset.t==="vysledky") renderResults();
+    if(b.dataset.t==="diplomy") renderDiplomas();
+    if(b.dataset.t==="nastaveni") fillSettings();
+  });
+});
+
+/* ---------------- startovka ---------------- */
+function parseLine(l){
+  const parts=l.split(/[;,\t]/).map(x=>x.trim().replace(/^"+|"+$/g,"").trim()).filter(Boolean);
+  const num=parseInt(parts[0],10);
+  if(!num||!parts[1]) return null;
+  let year="",email="",gender="";
+  for(const x of parts.slice(2)){
+    const t=x.toLowerCase();
+    if(/^\d{4}$/.test(x)) year=x;
+    else if(x.includes("@")) email=x;
+    else if(["m","muz","muž","muzi","muži","male"].includes(t)) gender="M";
+    else if(["z","ž","zena","žena","zeny","ženy","f","female"].includes(t)) gender="Z";
+  }
+  return {num,name:parts[1],year,email,gender};
+}
+function importText(text,src){
+  const lines=text.replace(/^\uFEFF/,"").split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  let added=0,skipped=0;
+  for(const l of lines){
+    const r=parseLine(l);
+    if(!r){skipped++;continue;}                    // hlavička nebo vadný řádek
+    if(S.p.some(x=>x.num===r.num)){skipped++;continue;} // duplicitní číslo
+    S.p.push(r); added++;
+  }
+  S.p.sort((a,b)=>a.num-b.num);
+  save(); renderP();
+  if(!added) toast("Nenačten žádný nový řádek. Zkontroluj formát: číslo;jméno;rok;e-mail",false);
+  else toast(`Načteno ${added} běžců`+(skipped?` (${skipped} řádků přeskočeno)`:"")+".");
+}
+$("#btnImport").addEventListener("click",()=>{
+  importText($("#importBox").value);
+  $("#importBox").value="";
+});
+$("#csvFile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const readAs=enc=>new Promise(res=>{
+    const rd=new FileReader();
+    rd.onload=()=>res(rd.result);
+    rd.onerror=()=>res("");
+    rd.readAsText(f,enc);
+  });
+  (async()=>{
+    let txt=await readAs("utf-8");
+    if(txt.includes("\uFFFD")) txt=await readAs("windows-1250"); // český Excel export
+    importText(txt,"file");
+    e.target.value="";
+  })();
+});
+$("#btnAddOne").addEventListener("click",()=>{
+  const f=$("#addOneForm");
+  f.hidden=!f.hidden;
+  if(!f.hidden){
+    $("#aNum").value=S.p.length? Math.max(...S.p.map(x=>x.num))+1 : 1;
+    $("#aName").focus();
+  }
+});
+$("#aOk").addEventListener("click",()=>{
+  const num=parseInt($("#aNum").value,10);
+  const name=$("#aName").value.trim();
+  const year=$("#aYear").value.trim();
+  const email=$("#aMail").value.trim();
+  const gender=$("#aSex").value;
+  if(!num||!name){toast("Vyplň aspoň číslo a jméno.",false);return;}
+  if(S.p.some(x=>x.num===num)){toast("Startovní číslo "+num+" už existuje.",false);return;}
+  S.p.push({num,name,year:/^\d{4}$/.test(year)?year:"",email,gender});
+  S.p.sort((a,b)=>a.num-b.num);
+  save(); renderP();
+  toast("Přidán běžec č. "+num+" — "+name);
+  $("#aName").value="";$("#aYear").value="";$("#aMail").value="";
+  $("#aNum").value=Math.max(...S.p.map(x=>x.num))+1;
+  $("#aName").focus();
+});
+function renderP(){
+  $("#cntP").textContent=S.p.length;
+  $("#tblP tbody").innerHTML=S.p.map(x=>
+    `<tr><td class="num display">${x.num}</td><td>${esc(x.name)}</td><td>${x.gender==="M"?"M":x.gender==="Z"?"Ž":"—"}</td><td class="num">${esc(x.year)}</td><td>${esc(x.email)}</td>
+     <td><button class="btn small ghost" data-del="${x.num}">✕</button></td></tr>`).join("");
+  $("#tblP tbody").querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
+    const n=+b.dataset.del;
+    S.p=S.p.filter(x=>x.num!==n);
+    S.fin=S.fin.filter(f=>f.num!==n);
+    save(); renderP();
+  }));
+}
+
+/* ---------------- závod ---------------- */
+let tick=null;
+function raceElapsed(){
+  if(!S.startTs) return 0;
+  return (S.endTs||Date.now())-S.startTs;
+}
+function startClock(){
+  if(tick) clearInterval(tick);
+  tick=setInterval(()=>{
+    if(S.running&&S.startTs&&!S.endTs) $("#clock").textContent=fmt(raceElapsed(),true);
+  },100);
+}
+function renderRace(){
+  // clock state
+  const cp=$("#clockpanel");
+  if(S.endTs){
+    if(tick){clearInterval(tick);tick=null;}
+    $("#clock").textContent=fmt(raceElapsed(),true);
+    $("#clockstate").textContent="Závod ukončen · celkový čas "+fmt(raceElapsed());
+    cp.classList.add("stopped");
+    $("#btnStop").disabled=true;
+    $("#btnStart").textContent="▶ Nový start";
+  }else if(S.running&&S.startTs){
+    $("#clockstate").textContent="Závod běží — ťukej doběhy";
+    cp.classList.remove("stopped");
+    $("#btnStop").disabled=false;
+    $("#btnStart").textContent="▶ Hromadný start";
+    startClock();
+  }else{
+    $("#clock").textContent="00:00.0";
+    $("#clockstate").textContent="Připraveno ke startu";
+    cp.classList.remove("stopped");
+    $("#btnStop").disabled=true;
+    $("#btnStart").textContent="▶ Hromadný start";
+  }
+  renderTiles();
+}
+$("#btnStart").addEventListener("click",async()=>{
+  if(S.running&&!S.endTs){
+    if(!await ask("Závod už běží. Opravdu restartovat start? Smažou se dosavadní doběhy.","Restartovat")) return;
+  }else if(S.endTs){
+    if(!await ask("Spustit nový závod? Smažou se dosavadní doběhy a časy.","Spustit")) return;
+  }
+  if(!S.p.length){toast("Nejdřív načti startovní listinu.",false);return;}
+  S.fin=[]; S.startTs=Date.now(); S.endTs=null; S.running=true;
+  save(); renderRace();
+});
+$("#btnStop").addEventListener("click",async()=>{
+  const stopAt=Date.now(); // čas se bere v okamžiku kliknutí, ne až po potvrzení
+  const missing=S.p.length-S.fin.length;
+  const msg=missing>0
+    ? `Ukončit závod? ${missing} běžců zatím nedoběhlo — po ukončení už jim čas nezapíšeš.`
+    : "Ukončit závod a zastavit stopky?";
+  if(!await ask(msg,"Ukončit")) return;
+  S.endTs=stopAt; S.running=false;
+  if(tick){clearInterval(tick);tick=null;}
+  save(); renderRace();
+  toast("Závod ukončen · celkový čas "+fmt(raceElapsed()));
+});
+$("#btnUndo").addEventListener("click",()=>{
+  const last=S.fin.pop();
+  if(last){ save(); renderTiles(); }
+});
+function renderTiles(){
+  $("#btnUndo").disabled=!S.fin.length||!!S.endTs;
+  $("#tiles").innerHTML=S.p.map(x=>{
+    const f=S.fin.find(f=>f.num===x.num);
+    return `<button class="tile ${f?"done":""}" data-fin="${x.num}" ${f?"disabled":""} title="${esc(x.name)}">
+      ${x.num}<small>${f? fmt(f.ms) : esc(x.name)}</small></button>`;
+  }).join("");
+  $("#tiles").querySelectorAll("[data-fin]").forEach(b=>b.addEventListener("click",()=>{
+    if(S.endTs){toast("Závod je ukončen — doběhy už zapisovat nejdou.",false);return;}
+    if(!S.running||!S.startTs){toast("Závod ještě neodstartoval.",false);return;}
+    S.fin.push({num:+b.dataset.fin, ms:Date.now()-S.startTs});
+    save(); renderTiles();
+  }));
+}
+
+/* ---------------- výsledky ---------------- */
+function renderResults(){
+  const R=results();
+  const medal=p=>p===1?"🥇":p===2?"🥈":p===3?"🥉":"";
+  $("#tblR tbody").innerHTML=R.map(r=>
+    `<tr><td class="num"><span class="medal">${medal(r.pos)}</span> ${r.pos}.</td>
+     <td class="num display">${r.num}</td><td>${esc(r.name)}</td><td class="num">${esc(r.year)}</td>
+     <td>${r.cat? esc(r.cat)+" · "+r.catPos+"." : "—"}</td><td class="num"><b>${fmt(r.ms)}</b></td></tr>`).join("")
+    || `<tr><td colspan="6" class="hint">Zatím žádné doběhy. Výsledky se objeví po prvním ťuknutí v sekci Závod.</td></tr>`;
+
+  // tabulky po kategoriích (vždy min. podle pohlaví)
+  const groups={};
+  for(const r of R){ const k=r.cat||"Bez zařazení"; (groups[k]=groups[k]||[]).push(r); }
+  const bandOrder=["do 20 let","do 30 let","do 40 let","do 50 let","do 60 let","nad 60 let","bez ročníku"];
+  const keys=Object.keys(groups).sort((a,b)=>{
+    const gw=k=>k.startsWith("Muži")?0:k.startsWith("Ženy")?1:2;
+    if(gw(a)!==gw(b)) return gw(a)-gw(b);
+    const bi=k=>{const i=bandOrder.findIndex(x=>k.includes(x));return i<0?-1:i;};
+    return bi(a)-bi(b);
+  });
+  $("#catTables").innerHTML=R.length? keys.map(k=>
+    `<div class="card"><h2 class="display">${esc(k)} (${groups[k].length})</h2>
+     <table><thead><tr><th class="num">Poř.</th><th class="num">Č.</th><th>Jméno</th><th class="num">Ročník</th><th class="num">Čas</th><th class="num">Celkově</th></tr></thead><tbody>
+     ${groups[k].map((r,i)=>`<tr><td class="num"><span class="medal">${medal(i+1)}</span> ${i+1}.</td>
+       <td class="num display">${r.num}</td><td>${esc(r.name)}</td><td class="num">${esc(r.year)}</td>
+       <td class="num"><b>${fmt(r.ms)}</b></td><td class="num">${r.pos}.</td></tr>`).join("")}
+     </tbody></table></div>`).join("") : "";
+}
+$("#btnCsv").addEventListener("click",()=>{
+  const R=results();
+  if(!R.length){toast("Zatím nejsou žádné výsledky.",false);return;}
+  const csv="poradi;cislo;jmeno;pohlavi;rocnik;kategorie;poradi_v_kategorii;email;cas\n"
+    +R.map(r=>`${r.pos};${r.num};${r.name};${r.gender==="M"?"M":r.gender==="Z"?"Ž":""};${r.year};${r.cat};${r.catPos||""};${r.email};${fmt(r.ms)}`).join("\n");
+  csvModalCall(csv);
+});
+function csvModalCall(csv){ textExportModal("Export výsledků (CSV)",csv,"vysledky.csv","text/csv"); }
+
+/* ---------------- diplom ---------------- */
+let logoImg=null, logoSrcCached="";
+function loadLogo(){
+  return new Promise(res=>{
+    if(!S.d.logo){logoImg=null;res();return;}
+    if(logoImg&&logoSrcCached===S.d.logo){res();return;}
+    const im=new Image();
+    im.onload=()=>{logoImg=im;logoSrcCached=S.d.logo;res();};
+    im.onerror=()=>{logoImg=null;res();};
+    im.src=S.d.logo;
+  });
+}
+function shade(hex,f){ // ztmavení barvy pro horní pruh
+  const n=parseInt(hex.slice(1),16);
+  const r=Math.round(((n>>16)&255)*f),g=Math.round(((n>>8)&255)*f),b=Math.round((n&255)*f);
+  return `rgb(${r},${g},${b})`;
+}
+async function drawDiploma(r){
+  await document.fonts.ready; await loadLogo();
+  const c=document.createElement("canvas"); c.width=1600; c.height=1131;
+  const x=c.getContext("2d");
+  const C1=S.d.c1, C1D=shade(S.d.c1,0.65), C2=S.d.c2, C3=S.d.c3;
+  // podklad
+  x.fillStyle="#F9F7F2"; x.fillRect(0,0,1600,1131);
+  // horní brush pruh
+  x.fillStyle=C1D;
+  x.beginPath();x.moveTo(0,0);x.lineTo(1600,0);x.lineTo(1600,240);
+  x.lineTo(1480,275);x.lineTo(1100,250);x.lineTo(700,285);x.lineTo(300,255);x.lineTo(0,290);x.closePath();x.fill();
+  // šikmá stuha s mottem
+  if(S.d.motto){
+    x.save();x.translate(1250,120);x.rotate(-0.06);
+    x.fillStyle=C2;x.fillRect(-90,-34,420,68);
+    x.fillStyle="#fff";x.font="800 24px Inter";x.textAlign="center";
+    x.fillText(S.d.motto.toUpperCase().slice(0,26),120,9);x.restore();
+  }
+  // titulek
+  x.fillStyle="#fff";x.textAlign="left";
+  const evName=S.ev.name.toUpperCase();
+  x.font=(evName.length>16?"84px":"120px")+" Anton";
+  x.fillText(evName,70,160);
+  if(S.d.sub){
+    x.fillStyle=C2;x.font="34px Anton";
+    x.fillText(S.d.sub.toUpperCase(),74,212);
+  }
+  // DIPLOM
+  x.fillStyle=C1;x.font="150px Anton";x.textAlign="center";
+  x.fillText("DIPLOM",800,470);
+  // linka
+  x.strokeStyle=C2;x.lineWidth=6;
+  x.beginPath();x.moveTo(560,505);x.lineTo(1040,505);x.stroke();
+  // jméno (+ ročník)
+  x.fillStyle=C1D;
+  const nm=r.name.toUpperCase()+(S.d.showYear&&r.year? "  ·  "+r.year:"");
+  x.font=(nm.length>20?"60px":"88px")+" Anton";
+  x.fillText(nm,800,625);
+  // trať + kategorie
+  x.fillStyle="#3c465a";x.font="600 30px Inter";
+  x.fillText(S.ev.dist,800,690);
+  if(r.cat){
+    x.fillStyle=C2;x.font="800 28px Inter";
+    x.fillText(("Kategorie "+r.cat+" · "+r.catPos+". místo").toUpperCase(),800,732);
+  }
+  // čas a pořadí
+  const y0=815;
+  x.fillStyle=C1; roundRect(x,380,y0-58,380,120,16); x.fill();
+  x.fillStyle=C2; roundRect(x,840,y0-58,380,120,16); x.fill();
+  x.fillStyle="#fff";x.font="800 22px Inter";
+  x.fillText("VÝSLEDNÝ ČAS",570,y0-20);x.fillText("CELKOVÉ POŘADÍ",1030,y0-20);
+  x.font="64px Anton";
+  x.fillText(fmt(r.ms),570,y0+42);x.fillText(r.pos+".",1030,y0+42);
+  // místo + datum
+  x.fillStyle="#3c465a";x.font="600 28px Inter";
+  x.fillText([S.ev.place,czDate()].filter(Boolean).join(" · "),800,930);
+  // patička
+  x.fillStyle=C3;
+  x.beginPath();x.moveTo(0,1010);x.lineTo(1600,985);x.lineTo(1600,1131);x.lineTo(0,1131);x.closePath();x.fill();
+  x.fillStyle=C1D;x.font="800 24px Inter";x.textAlign="left";
+  x.fillText(S.d.foot,60,1075);
+  // logo vpravo dole
+  if(logoImg){
+    const maxH=95, sc=Math.min(maxH/logoImg.height, 300/logoImg.width);
+    const w=logoImg.width*sc,h=logoImg.height*sc;
+    x.fillStyle="#fff";roundRect(x,1600-w-80,1030,w+40,h+20,10);x.fill();
+    x.drawImage(logoImg,1600-w-60,1040,w,h);
+  }
+  return c;
+}
+function roundRect(x,px,py,w,h,r){x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();}
+
+async function previewDiploma(r){
+  const c=await drawDiploma(r);
+  const pv=$("#diplomaPreview");
+  pv.getContext("2d").clearRect(0,0,1600,1131);
+  pv.getContext("2d").drawImage(c,0,0);
+}
+function sampleResult(){
+  const R=results();
+  if(R[0]) return R[0];
+  const s={pos:1,num:1,name:"Jana Nováková",year:"1988",gender:"Z",email:"",ms:1075000};
+  s.cat=catLabel(s); s.catPos=1;
+  return s;
+}
+const dipFname=r=>`diplom-${r.num}-${r.name.replace(/\s+/g,"_")}.png`;
+
+/* modal s diplomy k uložení — přímé stahování bývá v náhledech blokované,
+   obrázek jde vždy uložit pravým tlačítkem / podržením prstu */
+function pngModal(items){
+  const ov=document.createElement("div");ov.className="overlay";
+  ov.innerHTML=`<div class="modal" style="max-width:760px;max-height:92vh;overflow:auto">
+    <p style="font-weight:800">Diplomy k uložení (${items.length})</p>
+    <p class="hint">Klikni na „Stáhnout PNG“. Pokud se nic nestane (např. v náhledu), ulož obrázek pravým tlačítkem myši, nebo na mobilu podržením prstu → „Uložit obrázek“.</p>
+    ${items.map(i=>`<div style="margin-bottom:16px">
+      <img src="${i.url}" style="width:100%;border:1px solid #C7CEDA;border-radius:8px" alt="Diplom ${esc(i.name)}">
+      <div class="row" style="justify-content:space-between;margin-top:6px">
+        <span style="font-size:13px;font-weight:600">${esc(i.name)}</span>
+        <a class="btn small" style="text-decoration:none" href="${i.url}" download="${esc(i.fname)}">⬇ Stáhnout PNG</a>
+      </div></div>`).join("")}
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-close>Zavřít</button></div></div>`;
+  document.body.appendChild(ov);
+  ov.querySelector("[data-close]").addEventListener("click",()=>ov.remove());
+  ov.addEventListener("click",e=>{if(e.target===ov)ov.remove();});
+}
+function textExportModal(title,text,fname,mime){
+  const url=URL.createObjectURL(new Blob(["\ufeff"+text],{type:mime}));
+  const ov=document.createElement("div");ov.className="overlay";
+  ov.innerHTML=`<div class="modal" style="max-width:640px">
+    <p style="font-weight:800">${esc(title)}</p>
+    <p class="hint">Klikni na Stáhnout, nebo si obsah zkopíruj do schránky.</p>
+    <textarea rows="8" readonly style="font-family:monospace;font-size:12px"></textarea>
+    <div class="row" style="justify-content:flex-end;margin-top:12px">
+      <button class="btn ghost" data-copy>Zkopírovat</button>
+      <a class="btn" style="text-decoration:none" href="${url}" download="${esc(fname)}">⬇ Stáhnout</a>
+      <button class="btn ghost" data-close>Zavřít</button></div></div>`;
+  ov.querySelector("textarea").value=text;
+  document.body.appendChild(ov);
+  ov.querySelector("[data-copy]").addEventListener("click",()=>{
+    const ta=ov.querySelector("textarea");ta.select();
+    try{document.execCommand("copy");toast("Zkopírováno do schránky.");}catch(e){toast("Kopírování se nepovedlo — označ text ručně.",false);}
+  });
+  ov.querySelector("[data-close]").addEventListener("click",()=>ov.remove());
+  ov.addEventListener("click",e=>{if(e.target===ov)ov.remove();});
+}
+
+function renderDiplomas(){
+  const R=results();
+  $("#tblD tbody").innerHTML=R.map(r=>
+    `<tr><td class="num">${r.pos}.</td><td>${esc(r.name)}</td><td>${esc(r.email)||"<span class='pill wait'>bez e-mailu</span>"}</td>
+     <td class="row"><button class="btn small ghost" data-prev="${r.num}">Náhled</button>
+     <button class="btn small" data-png="${r.num}">PNG</button>
+     <button class="btn small orange" data-send="${r.num}" ${r.email?"":"disabled"}>Odeslat</button></td>
+     <td id="st-${r.num}"><span class="pill wait">—</span></td></tr>`).join("")
+    || `<tr><td colspan="5" class="hint">Diplomy se objeví, jakmile budou výsledky. Náhled vzhledu najdeš v Nastavení.</td></tr>`;
+
+  const find=n=>results().find(r=>r.num===n);
+  $("#tblD tbody").querySelectorAll("[data-prev]").forEach(b=>b.addEventListener("click",async()=>{
+    await previewDiploma(find(+b.dataset.prev));
+    $("#diplomaPreview").scrollIntoView({behavior:"smooth"});
+  }));
+  $("#tblD tbody").querySelectorAll("[data-png]").forEach(b=>b.addEventListener("click",async()=>{
+    const r=find(+b.dataset.png);
+    const url=(await drawDiploma(r)).toDataURL("image/png");
+    pngModal([{name:r.name,fname:dipFname(r),url}]);
+  }));
+  $("#tblD tbody").querySelectorAll("[data-send]").forEach(b=>b.addEventListener("click",()=>sendOne(find(+b.dataset.send))));
+}
+$("#btnAllPng").addEventListener("click",async()=>{
+  const R=results();
+  if(!R.length){toast("Zatím nejsou žádné výsledky.",false);return;}
+  toast("Generuji diplomy…");
+  const items=[];
+  for(const r of R){
+    items.push({name:`${r.pos}. ${r.name}`,fname:dipFname(r),url:(await drawDiploma(r)).toDataURL("image/png")});
+  }
+  pngModal(items);
+});
+async function sendOne(r){
+  const st=$("#st-"+r.num);
+  if(!S.ev.hook){toast("Nejdřív v Nastavení vyplň webhook URL.",false);return;}
+  if(!r.email){return;}
+  st.innerHTML='<span class="pill wait">odesílám…</span>';
+  try{
+    const png=(await drawDiploma(r)).toDataURL("image/png").split(",")[1];
+    const res=await fetch(S.ev.hook,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({key:S.ev.key||"",event:S.ev.name,date:czDate(),place:S.ev.place,
+        name:r.name,email:r.email,number:r.num,year:r.year,
+        gender:r.gender==="M"?"muž":r.gender==="Z"?"žena":"",
+        category:r.cat||"",category_position:r.catPos||"",
+        position:r.pos,time:fmt(r.ms),
+        diploma_png_base64:png})});
+    st.innerHTML=res.ok?'<span class="pill ok">odesláno ✓</span>':'<span class="pill err">chyba '+res.status+'</span>';
+  }catch(e){
+    st.innerHTML='<span class="pill err">chyba sítě</span>';
+  }
+}
+$("#btnSendAll").addEventListener("click",async()=>{
+  const R=results().filter(r=>r.email);
+  if(!R.length){toast("Nikdo ve výsledcích nemá e-mail.",false);return;}
+  if(!await ask(`Odeslat diplom ${R.length} účastníkům?`,"Odeslat"))return;
+  for(const r of R){ await sendOne(r); await new Promise(res=>setTimeout(res,600)); }
+  toast("Rozesílání dokončeno.");
+});
+
+/* ---------------- nastavení ---------------- */
+function fillSettings(){
+  $("#setName").value=S.ev.name;$("#setPlace").value=S.ev.place;
+  $("#setDate").value=S.ev.date;$("#setDist").value=S.ev.dist;$("#setHook").value=S.ev.hook;
+  $("#setKey").value=S.ev.key||"";
+  $("#setMotto").value=S.d.motto;$("#setSub").value=S.d.sub;$("#setFoot").value=S.d.foot;
+  $("#setC1").value=S.d.c1;$("#setC2").value=S.d.c2;$("#setC3").value=S.d.c3;
+  $("#setYearOn").checked=S.d.showYear;
+  $("#setAgeCats").checked=S.d.ageCats;
+  const th=$("#logoThumb");
+  if(S.d.logo){th.src=S.d.logo;th.style.display="block";$("#btnLogoDel").hidden=false;}
+  else{th.style.display="none";$("#btnLogoDel").hidden=true;}
+}
+function readSettings(){
+  S.ev={name:$("#setName").value.trim()||"RUN CUP",place:$("#setPlace").value.trim(),
+        date:$("#setDate").value,dist:$("#setDist").value.trim(),hook:$("#setHook").value.trim(),
+        key:$("#setKey").value.trim()};
+  S.d.motto=$("#setMotto").value.trim();
+  S.d.sub=$("#setSub").value.trim();
+  S.d.foot=$("#setFoot").value.trim();
+  S.d.c1=$("#setC1").value;S.d.c2=$("#setC2").value;S.d.c3=$("#setC3").value;
+  S.d.showYear=$("#setYearOn").checked;
+  S.d.ageCats=$("#setAgeCats").checked;
+}
+$("#btnSaveSet").addEventListener("click",()=>{
+  readSettings(); save(); updateHeader(); toast("Nastavení uloženo.");
+});
+$("#btnPreviewD").addEventListener("click",async()=>{
+  readSettings(); save(); updateHeader();
+  // přepnout na diplomy a ukázat náhled
+  document.querySelector('[data-t="diplomy"]').click();
+  await previewDiploma(sampleResult());
+  $("#diplomaPreview").scrollIntoView({behavior:"smooth"});
+});
+$("#setLogo").addEventListener("change",e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  if(f.size>500*1024){toast("Logo je moc velké (max 500 kB). Zmenši ho a zkus znovu.",false);e.target.value="";return;}
+  const rd=new FileReader();
+  rd.onload=()=>{S.d.logo=rd.result;logoImg=null;logoSrcCached="";save();fillSettings();};
+  rd.readAsDataURL(f);
+});
+$("#btnLogoDel").addEventListener("click",()=>{
+  S.d.logo="";logoImg=null;logoSrcCached="";
+  $("#setLogo").value="";save();fillSettings();
+});
+$("#btnExportRace").addEventListener("click",()=>{
+  const data={app:"runcup",version:1,exported:new Date().toISOString(),
+    ev:S.ev,d:S.d,p:S.p,fin:S.fin,startTs:S.startTs,endTs:S.endTs,running:S.running};
+  const slug=(S.ev.name||"zavod").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  const stamp=new Date().toISOString().slice(0,16).replace(/[T:]/g,"-");
+  textExportModal("Export závodu (JSON)",JSON.stringify(data,null,1),`runcup-${slug}-${stamp}.json`,"application/json");
+});
+$("#importRaceFile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=async()=>{
+    e.target.value="";
+    let d;
+    try{ d=JSON.parse(String(rd.result).replace(/^\uFEFF/,"")); }
+    catch(err){ toast("Soubor není platný JSON export RunCupu.",false); return; }
+    if(!d||d.app!=="runcup"||!Array.isArray(d.p)||!Array.isArray(d.fin)){
+      toast("Soubor není platný JSON export RunCupu.",false); return;
+    }
+    const info=`Import přepíše aktuální data. Nahraje se: „${d.ev&&d.ev.name||"závod"}“ — ${d.p.length} běžců, ${d.fin.length} doběhů.`;
+    if(!await ask(info,"Importovat")) return;
+    S.ev=Object.assign(S.ev,d.ev||{});
+    S.d=Object.assign(S.d,d.d||{});
+    S.p=d.p; S.fin=d.fin;
+    S.startTs=d.startTs||null; S.endTs=d.endTs||null; S.running=!!d.running;
+    if(tick){clearInterval(tick);tick=null;}
+    logoImg=null;logoSrcCached="";
+    save(); updateHeader(); renderP(); renderRace(); renderResults(); renderDiplomas(); fillSettings();
+    toast("Závod importován: "+(S.ev.name||"")+" ("+S.p.length+" běžců).");
+  };
+  rd.readAsText(f,"utf-8");
+});
+$("#btnResetRace").addEventListener("click",async()=>{
+  if(!await ask("Smazat start a všechny doběhy? Startovka zůstane.","Vynulovat"))return;
+  S.fin=[];S.startTs=null;S.endTs=null;S.running=false;
+  if(tick){clearInterval(tick);tick=null;}
+  save(); renderRace(); renderResults();
+  toast("Závod vynulován.");
+});
+$("#btnResetAll").addEventListener("click",async()=>{
+  if(!await ask("Opravdu smazat úplně vše včetně startovky?","Smazat vše"))return;
+  S.p=[];S.fin=[];S.startTs=null;S.endTs=null;S.running=false;
+  if(tick){clearInterval(tick);tick=null;}
+  save(); renderP(); renderRace(); renderResults(); renderDiplomas();
+  toast("Vše smazáno.");
+});
+
+/* ---------------- init ---------------- */
+(async()=>{
+  await load();
+  updateHeader();
+  renderP();
+  if(S.running&&S.startTs&&!S.endTs){startClock();}
+})();
+</script>
+</body>
+</html>
