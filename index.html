@@ -139,6 +139,7 @@ footer{max-width:980px;margin:0 auto;padding:0 12px 30px;font-size:12px;color:#7
   <button role="tab" aria-selected="false" data-t="vysledky">Výsledky</button>
   <button role="tab" aria-selected="false" data-t="diplomy">Diplomy</button>
   <button role="tab" aria-selected="false" data-t="nastaveni">Nastavení</button>
+  <button role="tab" aria-selected="false" data-t="napoveda">Nápověda</button>
 </nav>
 
 <main>
@@ -294,6 +295,46 @@ footer{max-width:980px;margin:0 auto;padding:0 12px 30px;font-size:12px;color:#7
       <button class="btn ghost" id="btnResetRace">Vynulovat závod (časy)</button>
       <button class="btn ghost" id="btnResetAll" style="border-color:#A03030;color:#A03030">Smazat úplně vše</button>
     </div>
+  </div>
+</section>
+
+<!-- ================= NÁPOVĚDA ================= -->
+<section id="napoveda" hidden>
+  <div class="card">
+    <h2 class="display">Jak uspořádat závod krok za krokem</h2>
+    <p class="hint">Doporučený postup od přípravy až po rozeslání diplomů. Sekce nahoře (Startovka → Závod → Výsledky → Diplomy) kopírují toto pořadí.</p>
+
+    <h3 style="margin:16px 0 6px;color:#122F5C">1 · Před akcí — Nastavení</h3>
+    <p style="font-size:14px;line-height:1.5">Otevři záložku <b>Nastavení</b> a vyplň název akce, místo, datum, délku trati a pořadatele (jméno + firma). Pokud chceš dělit i podle věku, zapni <b>Věkové kategorie</b>. V části <b>Vzhled diplomu</b> nastav barvy, motto, patičku a případně nahraj logo. Klikni na <b>Náhled diplomu</b> a zkontroluj, že vše sedí. Nakonec <b>Ulož nastavení</b>.</p>
+
+    <h3 style="margin:16px 0 6px;color:#122F5C">2 · Příprava startovky</h3>
+    <p style="font-size:14px;line-height:1.5">V záložce <b>Startovka</b> naimportuj běžce. Nejrychlejší je <b>Nahrát CSV soubor</b> ve formátu <code>číslo;jméno;pohlaví;rok;e-mail</code> (pohlaví, rok i e-mail jsou nepovinné). Jednotlivce přidáš i ručně tlačítkem <b>+ Přidat jednoho</b>. Zkontroluj, že v tabulce sedí čísla, jména a pohlaví.</p>
+
+    <h3 style="margin:16px 0 6px;color:#122F5C">3 · Start závodu</h3>
+    <p style="font-size:14px;line-height:1.5">Přejdi do záložky <b>Závod</b>. Až jsou všichni na startovní čáře, klikni na <b>▶ Hromadný start</b> — stopky se rozeběhnou a všem běží stejný čas. <b>Necháš tuto záložku otevřenou po celou dobu závodu.</b></p>
+
+    <h3 style="margin:16px 0 6px;color:#122F5C">4 · Zápis doběhů v cíli</h3>
+    <p style="font-size:14px;line-height:1.5">Jakmile běžec proběhne cílem, <b>ťukni na jeho číslo</b> v mřížce. Kachle zezelená a uloží se čas. Když omylem ťukneš špatné číslo, použij <b>↩ Vrátit poslední doběh</b>. Tip: měj v cíli dva lidi — jeden ťuká, druhý pro jistotu zapisuje pořadí čísel na papír.</p>
+
+    <h3 style="margin:16px 0 6px;color:#122F5C">5 · Ukončení závodu</h3>
+    <p style="font-size:14px;line-height:1.5">Když doběhne poslední běžec, klikni na <b>■ Ukončit závod</b>. Stopky se zastaví a výsledky se uzamknou (další doběhy už zapisovat nejde). Pokud někdo nedoběhl, aplikace tě upozorní.</p>
+
+    <h3 style="margin:16px 0 6px;color:#122F5C">6 · Výsledky</h3>
+    <p style="font-size:14px;line-height:1.5">V záložce <b>Výsledky</b> je celkové pořadí a pod ním samostatné tabulky podle pohlaví (a věku, pokud jsi kategorie zapnul). Tlačítkem <b>Export CSV</b> si výsledky uložíš do tabulky pro Excel.</p>
+
+    <h3 style="margin:16px 0 6px;color:#122F5C">7 · Diplomy</h3>
+    <p style="font-size:14px;line-height:1.5">V záložce <b>Diplomy</b> si jednotlivé diplomy zobrazíš (<b>Náhled</b>), stáhneš (<b>PNG</b>) nebo rovnou odešleš e-mailem. Pro hromadné stažení slouží <b>Stáhnout všechny PNG</b>. Pro rozeslání e-mailem musí být v Nastavení vyplněná <b>Webhook URL</b> a běžci musí mít e-mail.</p>
+
+    <h3 style="margin:16px 0 6px;color:#122F5C">Záloha — pojistka pro případ nouze</h3>
+    <p style="font-size:14px;line-height:1.5">Data jsou uložená jen v tomto prohlížeči. Kdyby na akci selhal mobil, v Nastavení použij <b>Exportovat závod</b> (uloží vše do souboru) a na jiném zařízení <b>Importovat závod</b> — pokračuješ tam, kde jsi skončil, i s běžícími stopkami. Doporučujeme exportovat průběžně během závodu.</p>
+  </div>
+
+  <div class="card">
+    <h2 class="display">Časté otázky</h2>
+    <p style="font-size:14px;line-height:1.5"><b>Uvidí každý návštěvník webu můj závod?</b><br>Ne. Každé zařízení má svůj vlastní oddělený závod — data se nesdílejí. To je záměr: víc lidí může web používat najednou, aniž by si překáželi.</p>
+    <p style="font-size:14px;line-height:1.5;margin-top:10px"><b>Zmizí mi data po zavření prohlížeče?</b><br>Ne, uloží se automaticky. Zmizí jen když vymažeš data prohlížeče nebo jsi v anonymním režimu. Proto dělej zálohy.</p>
+    <p style="font-size:14px;line-height:1.5;margin-top:10px"><b>Jak přenesu závod z mobilu do počítače?</b><br>Přes Export závodu na jednom zařízení a Import na druhém (v Nastavení).</p>
+    <p style="font-size:14px;line-height:1.5;margin-top:10px"><b>Nefunguje mi stahování nebo odesílání.</b><br>V náhledu bývají tyto funkce omezené. Na ostré adrese (runcup.vercel.app) fungují normálně. U odesílání ověř webhook a e-maily běžců.</p>
   </div>
 </section>
 </main>
